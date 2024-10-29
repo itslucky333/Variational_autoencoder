@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--latent_dim", type=int, default=2, help="Dimensionality of the latent space.")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimizer.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
+    parser.add_argument("--beta_value", type = int , default = 1, help=" total loss = reconstruction loss + beta * KL divergence loss")
 
     args = parser.parse_args()
 

@@ -36,6 +36,7 @@ def create_parameter_file(directory,args,device):
      file.write(f"Latent Dimension: {args.latent_dim}\n")
      file.write(f"Learning Rate: {args.learning_rate}\n")
      file.write(f"Epochs: {args.epochs}\n")
+     file.write(f"beta_value : {args.beta_value}")
 
 
 def write_metrics_json(epoch, batch, loss, file_path):
