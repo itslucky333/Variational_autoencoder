@@ -61,3 +61,17 @@ class VAE(nn.Module):
         recon_x = self.decoder(z)
         return recon_x, mu, logvar
 
+    def sample(self, num_samples):
+        """Generates new images by sampling from the latent space.
+
+        Args:
+                num_samples (int): The number of samples to generate.
+
+        Returns:
+                torch.Tensor: Generated images of shape (num_samples, 3, H, W).
+        """
+        # Sample random points in the latent space
+        z = torch.randn(num_samples, self.encoder.fc_mu.out_features).to(next(self.parameters()).device)
+        # Decode the sampled points to generate images
+        samples = self.decoder(z)
+        return samples
