@@ -1,0 +1,43 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.env/
+env/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Data files
+data/
+*.csv
+*.tsv
+*.json
+*.h5
+
+# Model checkpoints
+models/
+checkpoints/
+*.pth
+*.pt
+
+# Log files
+*.log
+
+# IDEs and editor config
+.idea/
+.vscode/
+.DS_Store
+
+# Temporary files
+*~
+*.bak
+*.tmp
+
+# Output files
+output/
+results/
+figures/
