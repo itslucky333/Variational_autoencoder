@@ -1,12 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-
-
-from vae_loss import vae_loss
 
 class Encoder(nn.Module):
-    def __init__(self, latent_dim=2):
+    def __init__(self, latent_dim=2, input_shape=(224, 224)):
         super(Encoder, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),
@@ -17,8 +13,14 @@ class Encoder(nn.Module):
             nn.ReLU(),
             nn.Flatten()
         )
-        self.fc_mu = nn.Linear(128 * 28 * 28, latent_dim)  # Mean vector
-        self.fc_logvar = nn.Linear(128 * 28 * 28, latent_dim)  # Log variance vector
+        
+        # Automatically calculate the flattened dimension from the input shape
+        with torch.no_grad():
+            dummy_input = torch.zeros(1, 3, *input_shape)
+            self.flattened_dim = self.conv(dummy_input).view(1, -1).size(1)
+        
+        self.fc_mu = nn.Linear(self.flattened_dim, latent_dim)
+        self.fc_logvar = nn.Linear(self.flattened_dim, latent_dim)
 
     def forward(self, x):
         x = self.conv(x)
@@ -26,29 +28,36 @@ class Encoder(nn.Module):
         logvar = self.fc_logvar(x)
         return mu, logvar
 
+
 class Decoder(nn.Module):
-    def __init__(self, latent_dim=2):
+    def __init__(self, latent_dim=2, output_shape=(512, 512)):
         super(Decoder, self).__init__()
-        self.fc = nn.Linear(latent_dim, 128 * 28 * 28)
+        
+        # Calculate the initial height and width after upsampling
+        self.initial_height = output_shape[0] // 8
+        self.initial_width = output_shape[1] // 8
+        self.fc = nn.Linear(latent_dim, 128 * self.initial_height * self.initial_width)
+        
         self.deconv = nn.Sequential(
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
-            nn.Sigmoid()  # Output range [0, 1] for images
+            nn.Sigmoid()  # Output range [0, 1] for normalized images
         )
 
     def forward(self, z):
-        x = self.fc(z).view(-1, 128, 28, 28)
+        x = self.fc(z).view(-1, 128, self.initial_height, self.initial_width)
         x = self.deconv(x)
         return x
 
+
 class VAE(nn.Module):
-    def __init__(self, latent_dim=2):
+    def __init__(self, latent_dim=2, input_shape=(224, 224), output_shape=(512, 512)):
         super(VAE, self).__init__()
-        self.encoder = Encoder(latent_dim)
-        self.decoder = Decoder(latent_dim)
+        self.encoder = Encoder(latent_dim, input_shape=input_shape)
+        self.decoder = Decoder(latent_dim, output_shape=output_shape)
 
     def reparameterize(self, mu, logvar):
         std = torch.exp(0.5 * logvar)
@@ -62,16 +71,6 @@ class VAE(nn.Module):
         return recon_x, mu, logvar
 
     def sample(self, num_samples):
-        """Generates new images by sampling from the latent space.
-
-        Args:
-                num_samples (int): The number of samples to generate.
-
-        Returns:
-                torch.Tensor: Generated images of shape (num_samples, 3, H, W).
-        """
-        # Sample random points in the latent space
         z = torch.randn(num_samples, self.encoder.fc_mu.out_features).to(next(self.parameters()).device)
-        # Decode the sampled points to generate images
         samples = self.decoder(z)
         return samples

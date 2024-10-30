@@ -8,6 +8,7 @@ from dataloader import create_data_loaders, print_batch_info
 from create_output_directory import create_output_directory, create_parameter_file , write_metrics_json , plot_and_save_generated_images, create_directory
 from vae_loss import vae_loss
 
+
 def main(args):
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -22,8 +23,6 @@ def main(args):
     )
 
     # Initialize model
-    vae = VAE(latent_dim=args.latent_dim).to(device)
-    optimizer = optim.Adam(vae.parameters(), lr=args.learning_rate)
 
     # Print batch info
     # print_batch_info(data_loader=train_loader, batch_idx=0)
@@ -37,11 +36,17 @@ def main(args):
 
     beta_value = args.beta_value
     alpha_value = args.alpha_value
+    
+
+    vae = VAE(latent_dim=args.latent_dim, input_shape=args.image_size, output_shape=args.image_size).to(device)
+    optimizer = optim.Adam(vae.parameters(), lr=args.learning_rate)
+
     for epoch in range(args.epochs):
         vae.train()
         for batch_idx, (images, labels) in enumerate(train_loader):
             # Use the loop variable directly for the epoch and batch number
             images = images.to(device)
+            print(f'images shape P={images.shape}')
             optimizer.zero_grad()
 
             recon_images, mu, logvar = vae(images)
