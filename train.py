@@ -35,6 +35,8 @@ def main(args):
     num_of_images_in_generated_grid = 64
     generated_image_directory_path = create_directory(directory, "generated_images")
 
+    beta_value = args.beta_value
+    alpha_value = args.alpha_value
     for epoch in range(args.epochs):
         vae.train()
         for batch_idx, (images, labels) in enumerate(train_loader):
@@ -43,7 +45,7 @@ def main(args):
             optimizer.zero_grad()
 
             recon_images, mu, logvar = vae(images)
-            loss = vae_loss(recon_images, images, mu, logvar)
+            loss = vae_loss(recon_images, images, mu, logvar,alpha_value, beta_value)
             loss.backward()
             optimizer.step()
 
@@ -70,8 +72,8 @@ if __name__ == "__main__":
     parser.add_argument("--latent_dim", type=int, default=2, help="Dimensionality of the latent space.")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimizer.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
-    parser.add_argument("--beta_value", type = int , default = 1, help=" total loss = reconstruction loss + beta * KL divergence loss")
-
+    parser.add_argument("--beta_value", type = int , default = 1, help=" this is beta value : total loss = alpha * reconstruction loss + beta * KL divergence loss")
+    parser.add_argument("--alpha_value", type = int, default=1, help="this is alpha value : total loss = alpha * reconstruction loss + beta * kl divergence loss")
     args = parser.parse_args()
 
     # Convert the image_size string to a tuple

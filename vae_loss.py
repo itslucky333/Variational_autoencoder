@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-def vae_loss(recon_x, x, mu, logvar):
+def vae_loss(recon_x, x, mu, logvar,alpha_value ,beta_value):
     """
     Computes the VAE loss, which consists of the reconstruction loss and KL divergence.
 
@@ -20,4 +20,4 @@ def vae_loss(recon_x, x, mu, logvar):
     # KL divergence loss
     kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     
-    return recon_loss + kl_div
+    return (alpha_value * recon_loss + beta_value * kl_div)
