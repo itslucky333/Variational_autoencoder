@@ -7,7 +7,8 @@ from model import VAE # Assuming model.py contains your VAE class and loss funct
 from dataloader import create_data_loaders, print_batch_info
 from create_output_directory import create_output_directory, create_parameter_file , write_metrics_json , plot_and_save_generated_images, create_directory
 from vae_loss import vae_loss
-
+from fid.calculate_mean_and_covariance_for_fid import calculate_mean_and_covariance
+from fid.fid_loss import calculate_frechet_distance
 
 def main(args):
     # Set device
@@ -46,11 +47,14 @@ def main(args):
         for batch_idx, (images, labels) in enumerate(train_loader):
             # Use the loop variable directly for the epoch and batch number
             images = images.to(device)
-            print(f'images shape P={images.shape}')
             optimizer.zero_grad()
-
             recon_images, mu, logvar = vae(images)
+            mean_real, cov_real = calculate_mean_and_covariance(images)
+            mean_generated, cov_generated =  calculate_mean_and_covariance(recon_images)
+            print(f'the mean real is {mean_real}, cov real is {cov_real}, mean generated is {mean_generated}, cov generated is {cov_generated}')
+            fid = calculate_frechet_distance(mu1=mean_real, sigma1= cov_real,mu2= mean_generated,sigma2=cov_generated )
             loss = vae_loss(recon_images, images, mu, logvar,alpha_value, beta_value)
+            loss = loss + fid
             loss.backward()
             optimizer.step()
 
