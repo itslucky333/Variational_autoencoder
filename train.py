@@ -52,9 +52,9 @@ def main(args):
             mean_real, cov_real = calculate_mean_and_covariance(images)
             mean_generated, cov_generated =  calculate_mean_and_covariance(recon_images)
             print(f'the mean real is {mean_real}, cov real is {cov_real}, mean generated is {mean_generated}, cov generated is {cov_generated}')
-            fid = calculate_frechet_distance(mu1=mean_real, sigma1= cov_real,mu2= mean_generated,sigma2=cov_generated )
+            # fid = calculate_frechet_distance(mu1=mean_real, sigma1= cov_real,mu2= mean_generated,sigma2=cov_generated )
             loss = vae_loss(recon_images, images, mu, logvar,alpha_value, beta_value)
-            loss = loss + fid
+            loss = loss 
             loss.backward()
             optimizer.step()
 
