@@ -45,28 +45,52 @@ def main(args):
     for epoch in range(args.epochs):
         vae.train()
         for batch_idx, (images, labels) in enumerate(train_loader):
-            # Use the loop variable directly for the epoch and batch number
             images = images.to(device)
             optimizer.zero_grad()
+
+            # Forward pass through the VAE
             recon_images, mu, logvar = vae(images)
+
+            # Calculate mean and covariance for real and generated images
             mean_real, cov_real = calculate_mean_and_covariance(images)
-            mean_generated, cov_generated =  calculate_mean_and_covariance(recon_images)
-            print(f'the mean real is {mean_real}, cov real is {cov_real}, mean generated is {mean_generated}, cov generated is {cov_generated}')
-            # fid = calculate_frechet_distance(mu1=mean_real, sigma1= cov_real,mu2= mean_generated,sigma2=cov_generated )
-            loss = vae_loss(recon_images, images, mu, logvar,alpha_value, beta_value)
-            loss = loss 
-            loss.backward()
+            mean_generated, cov_generated = calculate_mean_and_covariance(recon_images)
+
+            # Detach the mean and covariance tensors to prevent gradient tracking
+            mean_real, cov_real = mean_real.detach(), cov_real.detach()
+            mean_generated, cov_generated = mean_generated.detach(), cov_generated.detach()
+
+            # Calculate Frechet Distance
+            fid_value = calculate_frechet_distance(
+                mu1=mean_real.cpu().numpy(),
+                sigma1=cov_real.cpu().numpy(),
+                mu2=mean_generated.cpu().numpy(),
+                sigma2=cov_generated.cpu().numpy()
+            )
+            print(f"The value of FID is {fid_value}")
+
+            # Convert FID to a tensor and move to device for backpropagation
+            fid_tensor = torch.tensor(fid_value, requires_grad=True, device=device)
+
+            # Compute VAE loss
+            vae_loss_value = vae_loss(recon_images, images, mu, logvar, alpha_value, beta_value)
+            print(f"the fid value is {fid_tensor}")
+            # Define gamma to scale the contribution of FID
+            gamma = 10  # Adjust gamma as needed
+            combined_loss = vae_loss_value + gamma * fid_tensor
+
+            # Backpropagate combined loss
+            combined_loss.backward()
             optimizer.step()
 
             # Write metrics after each batch
-            write_metrics_json(epoch, batch_idx + 1, loss.item(), metrics_file_path)
-            
-            # Display epoch and batch in human-readable format (1-based index)
-            print(f"Epoch [{epoch + 1}/{args.epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {loss.item()}")
+            write_metrics_json(epoch, batch_idx + 1, combined_loss.item(), metrics_file_path)
 
-        sampled_images = vae.sample(num_of_images_in_generated_grid)
-        plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
-            
+            # Display epoch and batch in human-readable format (1-based index)
+            print(f"Epoch [{epoch + 1}/{args.epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {combined_loss.item()}")
+
+            sampled_images = vae.sample(num_of_images_in_generated_grid)
+            plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
+                    
 
 
 
