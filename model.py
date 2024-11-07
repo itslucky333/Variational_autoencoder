@@ -2,19 +2,25 @@ import torch
 import torch.nn as nn
 
 class Encoder(nn.Module):
-    def __init__(self, latent_dim=2, input_shape=(224, 224)):
+    def __init__(self, latent_dim=16, input_shape=(224, 224)):
         super(Encoder, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.Flatten()
         )
         
-        # Automatically calculate the flattened dimension from the input shape
+        # Calculate flattened dimension
         with torch.no_grad():
             dummy_input = torch.zeros(1, 3, *input_shape)
             self.flattened_dim = self.conv(dummy_input).view(1, -1).size(1)
@@ -30,36 +36,38 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, latent_dim=2, output_shape=(512, 512)):
+    def __init__(self, latent_dim=16, output_shape=(512, 512)):
         super(Decoder, self).__init__()
         
-        # Calculate the initial height and width after upsampling
-        self.initial_height = output_shape[0] // 8
-        self.initial_width = output_shape[1] // 8
+        self.initial_height = output_shape[0] // 16
+        self.initial_width = output_shape[1] // 16
         
-        # Update this layer to match the decoder's input size calculation
-        self.fc = nn.Linear(latent_dim, 128 * self.initial_height * self.initial_width)
+        self.fc = nn.Linear(latent_dim, 256 * self.initial_height * self.initial_width)
         
         self.deconv = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
-            nn.Sigmoid()  # Output range [0, 1] for normalized images
+            nn.Sigmoid()  # Output range [0, 1]
         )
 
     def forward(self, z):
-        # Ensuring z matches the expected shape
-        x = self.fc(z).view(-1, 128, self.initial_height, self.initial_width)
+        x = self.fc(z).view(-1, 256, self.initial_height, self.initial_width)
         x = self.deconv(x)
         return x
 
 
-
 class VAE(nn.Module):
-    def __init__(self, latent_dim=2, input_shape=(224, 224), output_shape=(512, 512)):
+    def __init__(self, latent_dim=16, input_shape=(224, 224), output_shape=(512, 512)):
         super(VAE, self).__init__()
+        print(f"Latent dimension: {latent_dim}")
         self.encoder = Encoder(latent_dim, input_shape=input_shape)
         self.decoder = Decoder(latent_dim, output_shape=output_shape)
 
@@ -71,9 +79,7 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encoder(x)
         z = self.reparameterize(mu, logvar)
-        print(f"latent vector (z) shape : {z.shape}")
         recon_x = self.decoder(z)
-        print(f"Reconstructed image shape: {recon_x.shape}") 
         return recon_x, mu, logvar
 
     def sample(self, num_samples):
