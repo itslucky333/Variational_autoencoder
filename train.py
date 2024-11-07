@@ -5,10 +5,11 @@ import torch
 import torch.optim as optim
 from model import VAE # Assuming model.py contains your VAE class and loss function
 from dataloader import create_data_loaders, print_batch_info
-from create_output_directory import create_output_directory, create_parameter_file , write_metrics_json , plot_and_save_generated_images, create_directory
+from create_output_directory import create_output_directory, create_parameter_file , write_metrics_json , plot_and_save_generated_images, create_directory, save_model
 from vae_loss import vae_loss
 from fid.calculate_mean_and_covariance_for_fid import calculate_mean_and_covariance
 from fid.fid_loss import calculate_frechet_distance
+
 
 def main(args):
     # Set device
@@ -52,31 +53,32 @@ def main(args):
             recon_images, mu, logvar = vae(images)
 
             # Calculate mean and covariance for real and generated images
-            mean_real, cov_real = calculate_mean_and_covariance(images)
-            mean_generated, cov_generated = calculate_mean_and_covariance(recon_images)
+            # mean_real, cov_real = calculate_mean_and_covariance(images)
+            # mean_generated, cov_generated = calculate_mean_and_covariance(recon_images)
 
-            # Detach the mean and covariance tensors to prevent gradient tracking
-            mean_real, cov_real = mean_real.detach(), cov_real.detach()
-            mean_generated, cov_generated = mean_generated.detach(), cov_generated.detach()
+            # # Detach the mean and covariance tensors to prevent gradient tracking
+            # mean_real, cov_real = mean_real.detach(), cov_real.detach()
+            # mean_generated, cov_generated = mean_generated.detach(), cov_generated.detach()
 
-            # Calculate Frechet Distance
-            fid_value = calculate_frechet_distance(
-                mu1=mean_real.cpu().numpy(),
-                sigma1=cov_real.cpu().numpy(),
-                mu2=mean_generated.cpu().numpy(),
-                sigma2=cov_generated.cpu().numpy()
-            )
-            print(f"The value of FID is {fid_value}")
+            # # Calculate Frechet Distance
+            # fid_value = calculate_frechet_distance(
+            #     mu1=mean_real.cpu().numpy(),
+            #     sigma1=cov_real.cpu().numpy(),
+            #     mu2=mean_generated.cpu().numpy(),
+            #     sigma2=cov_generated.cpu().numpy()
+            # )
+            # print(f"The value of FID is {fid_value}")
 
             # Convert FID to a tensor and move to device for backpropagation
-            fid_tensor = torch.tensor(fid_value, requires_grad=True, device=device)
+            # fid_tensor = torch.tensor(fid_value, requires_grad=True, device=device)
 
             # Compute VAE loss
             vae_loss_value = vae_loss(recon_images, images, mu, logvar, alpha_value, beta_value)
-            print(f"the fid value is {fid_tensor}")
+            # print(f"the fid value is {fid_tensor}")
             # Define gamma to scale the contribution of FID
-            gamma = 10  # Adjust gamma as needed
-            combined_loss = vae_loss_value + gamma * fid_tensor
+            # gamma = 10  # Adjust gamma as needed
+            # combined_loss = vae_loss_value  + gamma * fid_tensor
+            combined_loss = vae_loss_value 
 
             # Backpropagate combined loss
             combined_loss.backward()
@@ -88,10 +90,10 @@ def main(args):
             # Display epoch and batch in human-readable format (1-based index)
             print(f"Epoch [{epoch + 1}/{args.epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {combined_loss.item()}")
 
-            sampled_images = vae.sample(num_of_images_in_generated_grid)
-            plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
+        sampled_images = vae.sample(num_of_images_in_generated_grid)
+        plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
                     
-
+    save_model(vae, path=directory)
 
 
 

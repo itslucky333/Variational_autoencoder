@@ -2,7 +2,15 @@ import os
 import json
 from datetime import datetime
 import matplotlib.pyplot as plt
+import torch
 
+
+def save_model(model, path, model_name="vae_model"):
+    os.makedirs(path, exist_ok=True)
+    torch.save(model.encoder.state_dict(), os.path.join(path, f"{model_name}_encoder.pth"))
+    torch.save(model.decoder.state_dict(), os.path.join(path, f"{model_name}_decoder.pth"))
+    torch.save(model.state_dict(), os.path.join(path, f"{model_name}.pth"))
+    print(f"Models saved in directory: {path}")
 
 def create_output_directory():
     if not os.path.exists("output"):

@@ -36,6 +36,8 @@ class Decoder(nn.Module):
         # Calculate the initial height and width after upsampling
         self.initial_height = output_shape[0] // 8
         self.initial_width = output_shape[1] // 8
+        
+        # Update this layer to match the decoder's input size calculation
         self.fc = nn.Linear(latent_dim, 128 * self.initial_height * self.initial_width)
         
         self.deconv = nn.Sequential(
@@ -48,9 +50,11 @@ class Decoder(nn.Module):
         )
 
     def forward(self, z):
+        # Ensuring z matches the expected shape
         x = self.fc(z).view(-1, 128, self.initial_height, self.initial_width)
         x = self.deconv(x)
         return x
+
 
 
 class VAE(nn.Module):
@@ -67,7 +71,9 @@ class VAE(nn.Module):
     def forward(self, x):
         mu, logvar = self.encoder(x)
         z = self.reparameterize(mu, logvar)
+        print(f"latent vector (z) shape : {z.shape}")
         recon_x = self.decoder(z)
+        print(f"Reconstructed image shape: {recon_x.shape}") 
         return recon_x, mu, logvar
 
     def sample(self, num_samples):
