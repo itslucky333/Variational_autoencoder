@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-
+import matplotlib.pyplot as plt
+import os 
 class Encoder(nn.Module):
     def __init__(self, latent_dim=16, input_shape=(224, 224)):
         super(Encoder, self).__init__()
@@ -36,7 +37,7 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, latent_dim=16, output_shape=(512, 512)):
+    def __init__(self, latent_dim=16, output_shape=(224,224)):
         super(Decoder, self).__init__()
         
         self.initial_height = output_shape[0] // 16
@@ -65,7 +66,7 @@ class Decoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, latent_dim=16, input_shape=(224, 224), output_shape=(512, 512)):
+    def __init__(self, latent_dim=16, input_shape=(224, 224), output_shape=(224, 224)):
         super(VAE, self).__init__()
         print(f"Latent dimension: {latent_dim}")
         self.encoder = Encoder(latent_dim, input_shape=input_shape)
@@ -86,3 +87,41 @@ class VAE(nn.Module):
         z = torch.randn(num_samples, self.encoder.fc_mu.out_features).to(next(self.parameters()).device)
         samples = self.decoder(z)
         return samples
+
+    def reconstruction(self, dataloader, num_images=25, save_path =None, name = "reconstruction.png"):
+        # Set the model to evaluation mode
+        self.eval()
+
+        # Grab a batch of images from the dataloader
+        images, _ = next(iter(dataloader))
+        images = images[:num_images]  # Select only the first 'num_images' images
+
+        # Pass the images through the encoder to get 'mu' and 'logvar'
+        mu, logvar = self.encoder(images)
+
+        # Reparameterize to sample the latent vectors
+        z = self.reparameterize(mu, logvar)
+
+        # Pass the latent vectors through the decoder to get the reconstructed images
+        recon_images = self.decoder(z)
+
+        # Convert images to numpy for plotting
+        images = images.cpu().detach().numpy()
+        recon_images = recon_images.cpu().detach().numpy()
+
+        # Plot original images and reconstructed images side by side
+        fig, axes = plt.subplots(5, 10, figsize=(15, 7))
+        for i in range(5):
+            for j in range(5):
+                # Original image
+                ax = axes[i, j]
+                ax.imshow(images[i * 5 + j].transpose(1, 2, 0))  # (C, H, W) -> (H, W, C)
+                ax.axis('off')
+
+                # Reconstructed image
+                ax = axes[i, j + 5]
+                ax.imshow(recon_images[i * 5 + j].transpose(1, 2, 0))  # (C, H, W) -> (H, W, C)
+                ax.axis('off')
+
+        save_file_path = os.path.join(save_path, name)
+        plt.savefig(save_file_path)

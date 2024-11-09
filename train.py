@@ -35,7 +35,7 @@ def main(args):
     metrics_file_path = os.path.join(directory, "metrics.json")
     num_of_images_in_generated_grid = 64
     generated_image_directory_path = create_directory(directory, "generated_images")
-
+    reconstruction_directory = create_directory( directory,"reconstruction_images")
     beta_value = args.beta_value
     alpha_value = args.alpha_value
     
@@ -90,8 +90,10 @@ def main(args):
             # Display epoch and batch in human-readable format (1-based index)
             print(f"Epoch [{epoch + 1}/{args.epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {combined_loss.item()}")
 
-            sampled_images = vae.sample(num_of_images_in_generated_grid)
-            plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
+        vae.reconstruction(dataloader = train_loader, num_images = 25, save_path = reconstruction_directory, name = f"{epoch + 1}")
+
+        sampled_images = vae.sample(num_of_images_in_generated_grid)
+        plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
                     
     save_model(vae, path=directory)
 
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training.")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of worker processes for data loading.")
     parser.add_argument("--image_size", type=str, default="(224,224)", help="Image size for training as a tuple (width, height).")
-    parser.add_argument("--latent_dim", type=int, default=10, help="Dimensionality of the latent space.")
+    parser.add_argument("--latent_dim", type=int, default= 30, help="Dimensionality of the latent space.")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimizer.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
     parser.add_argument("--beta_value", type = int , default = 1, help=" this is beta value : total loss = alpha * reconstruction loss + beta * KL divergence loss")
