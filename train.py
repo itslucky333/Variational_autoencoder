@@ -97,8 +97,6 @@ def main(args):
                     
     save_model(vae, path=directory)
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a Variational Autoencoder.")
     parser.add_argument("--train_data", type=str, required=True, help="Path to training data.")
@@ -108,7 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_size", type=str, default="(224,224)", help="Image size for training as a tuple (width, height).")
     parser.add_argument("--latent_dim", type=int, default= 30, help="Dimensionality of the latent space.")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimizer.")
-    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
+    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs.")
     parser.add_argument("--beta_value", type = int , default = 1, help=" this is beta value : total loss = alpha * reconstruction loss + beta * KL divergence loss")
     parser.add_argument("--alpha_value", type = int, default=1, help="this is alpha value : total loss = alpha * reconstruction loss + beta * kl divergence loss")
     args = parser.parse_args()
