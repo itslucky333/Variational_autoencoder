@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os 
+import numpy as np
+
 class Encoder(nn.Module):
     def __init__(self, latent_dim=16, input_shape=(224, 224)):
         super(Encoder, self).__init__()
@@ -88,7 +90,7 @@ class VAE(nn.Module):
         samples = self.decoder(z)
         return samples
 
-    def reconstruction(self, dataloader, num_images=25, save_path =None, name = "reconstruction.png"):
+    def reconstruction(self, dataloader, num_images=25, image_save_path =None, latent_space_save_path = None,name = "reconstruction.png"):
         # Set the model to evaluation mode
         self.eval()
 
@@ -101,6 +103,9 @@ class VAE(nn.Module):
 
         # Reparameterize to sample the latent vectors
         z = self.reparameterize(mu, logvar)
+
+        latent_save_path = os.path.join(latent_space_save_path, name)
+        np.save(latent_save_path, z.cpu().detach().numpy())
 
         # Pass the latent vectors through the decoder to get the reconstructed images
         recon_images = self.decoder(z)
@@ -123,5 +128,5 @@ class VAE(nn.Module):
                 ax.imshow(recon_images[i * 5 + j].transpose(1, 2, 0))  # (C, H, W) -> (H, W, C)
                 ax.axis('off')
 
-        save_file_path = os.path.join(save_path, name)
+        save_file_path = os.path.join(image_save_path, name)
         plt.savefig(save_file_path)

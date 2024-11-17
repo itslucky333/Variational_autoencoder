@@ -9,7 +9,7 @@ from create_output_directory import create_output_directory, create_parameter_fi
 from vae_loss import vae_loss
 from fid.calculate_mean_and_covariance_for_fid import calculate_mean_and_covariance
 from fid.fid_loss import calculate_frechet_distance
-
+from torchsummary import summary
 
 def main(args):
     # Set device
@@ -36,13 +36,14 @@ def main(args):
     num_of_images_in_generated_grid = 64
     generated_image_directory_path = create_directory(directory, "generated_images")
     reconstruction_directory = create_directory( directory,"reconstruction_images")
+    latent_space_directory = create_directory(directory, "latent_spaces")
     beta_value = args.beta_value
     alpha_value = args.alpha_value
     
 
     vae = VAE(latent_dim=args.latent_dim, input_shape=args.image_size, output_shape=args.image_size).to(device)
     optimizer = optim.Adam(vae.parameters(), lr=args.learning_rate)
-
+    summary(vae, input_size = (3,224,224))
     for epoch in range(args.epochs):
         vae.train()
         for batch_idx, (images, labels) in enumerate(train_loader):
@@ -90,12 +91,12 @@ def main(args):
             # Display epoch and batch in human-readable format (1-based index)
             print(f"Epoch [{epoch + 1}/{args.epochs}], Batch [{batch_idx + 1}/{len(train_loader)}], Loss: {combined_loss.item()}")
 
-        vae.reconstruction(dataloader = train_loader, num_images = 25, save_path = reconstruction_directory, name = f"{epoch + 1}")
+        vae.reconstruction(dataloader = train_loader, num_images = 25, image_save_path = reconstruction_directory, latent_space_save_path = latent_space_directory , name = f"{epoch + 1}")
 
         sampled_images = vae.sample(num_of_images_in_generated_grid)
         plot_and_save_generated_images(sampled_images=sampled_images, path = generated_image_directory_path, name = epoch+1)
                     
-    save_model(vae, path=directory)
+        save_model(vae, base_path=directory,model_name=f"{epoch+1}", epoch= epoch+1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a Variational Autoencoder.")
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_size", type=str, default="(224,224)", help="Image size for training as a tuple (width, height).")
     parser.add_argument("--latent_dim", type=int, default= 30, help="Dimensionality of the latent space.")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate for optimizer.")
-    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs.")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of training epochs.")
     parser.add_argument("--beta_value", type = int , default = 1, help=" this is beta value : total loss = alpha * reconstruction loss + beta * KL divergence loss")
     parser.add_argument("--alpha_value", type = int, default=1, help="this is alpha value : total loss = alpha * reconstruction loss + beta * kl divergence loss")
     args = parser.parse_args()

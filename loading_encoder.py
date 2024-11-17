@@ -161,8 +161,8 @@ def main():
         val_path='../../masked_autoencoder/1/Validation/'
     )
     vae = load_vae(
-        encoder_path='output/result+2024-11-09_13-48-12/vae_model_encoder.pth',
-        decoder_path='output/result+2024-11-09_13-48-12/vae_model_decoder.pth'
+        encoder_path='output/result+2024-11-09_17-17-44/vae_model_encoder.pth',
+        decoder_path='output/result+2024-11-09_17-17-44//vae_model_decoder.pth'
     )
     mu, log_var = get_mu_and_log_var(vae, train_loader, 1)
     print("Mu shape:", mu.shape)

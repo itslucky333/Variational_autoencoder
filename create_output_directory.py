@@ -4,13 +4,22 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import torch
 
+def save_model(model, base_path, epoch, model_name="vae_model"):
+    # Create the model directory
+    model_dir = os.path.join(base_path, "model")
+    os.makedirs(model_dir, exist_ok=True)
+    
+    # Create the epoch directory inside the model directory
+    epoch_dir = os.path.join(model_dir, f"epoch_{epoch}")
+    os.makedirs(epoch_dir, exist_ok=True)
+    
+    # Save the model components to the epoch directory
+    torch.save(model.encoder.state_dict(), os.path.join(epoch_dir, f"{model_name}_encoder.pth"))
+    torch.save(model.decoder.state_dict(), os.path.join(epoch_dir, f"{model_name}_decoder.pth"))
+    torch.save(model.state_dict(), os.path.join(epoch_dir, f"{model_name}.pth"))
+    
+    print(f"Models saved in directory: {epoch_dir}")
 
-def save_model(model, path, model_name="vae_model"):
-    os.makedirs(path, exist_ok=True)
-    torch.save(model.encoder.state_dict(), os.path.join(path, f"{model_name}_encoder.pth"))
-    torch.save(model.decoder.state_dict(), os.path.join(path, f"{model_name}_decoder.pth"))
-    torch.save(model.state_dict(), os.path.join(path, f"{model_name}.pth"))
-    print(f"Models saved in directory: {path}")
 
 def create_output_directory():
     if not os.path.exists("output"):
