@@ -105,7 +105,8 @@ class VAE(nn.Module):
         z = self.reparameterize(mu, logvar)
 
         latent_save_path = os.path.join(latent_space_save_path, name)
-        np.save(latent_save_path, z.cpu().detach().numpy())
+        torch.save(z,latent_save_path)
+
 
         # Pass the latent vectors through the decoder to get the reconstructed images
         recon_images = self.decoder(z)
